@@ -5,28 +5,67 @@ using TMPro;
 using UnityEngine.UI;
 
 public class Quiz : MonoBehaviour
-{
+{   [Header("Question")]
     [SerializeField] TextMeshProUGUI questionText;
     [SerializeField] QuestionsSO questions;
-    [SerializeField] GameObject[] answersButtons;
-    
-    [SerializeField] Sprite defaultSprite;
 
+    [Header("Answers")]
+    [SerializeField] GameObject[] answersButtons;
     [SerializeField] Sprite correctAnswerSprite;
     int correctAnswerIndex;
+    bool hasAnsweredQuestion;
+
+    [Header("Timer")]
+    [SerializeField] Image timerImage;
+    Timer timer;
     
+    [Header("Sprites")]
+    [SerializeField] Sprite defaultSprite;
     
     void Start()
-    {
+    {   
+        timer = FindObjectOfType<Timer>();
         DisplayQuestion();
        
     }
+
+    void FixedUpdate(){
+        
+        if(timer.nextQuestion){
+            hasAnsweredQuestion =false;
+            DisplayNextQuestion();
+            timer.nextQuestion=false;
+        }else if(!hasAnsweredQuestion && !timer.IsAnsweringQuestion){
+           //On Answer Did not selected in time.
+           DisplayAnswer(-1);
+           SetButtonState(false);
+
+        }
+        
+    }
      
+    
     public void OnAnswerSelected (int index) 
-        {   
-            Image buttonImage;
+        {   hasAnsweredQuestion = true;            
+            DisplayAnswer(index);
+            SetButtonState(false);
+            timer.CancelTimer();
+        }
+
+    
+    void DisplayNextQuestion()
+    {
+        DisplayQuestion();
+        SetButtonState(true);
+        SetDefaultButtonColorSpirites();
+    }
+    
+
+    void DisplayAnswer(int index){
+        Image buttonImage;
+        
            if(index == correctAnswerIndex)
-            {
+            {  
                questionText.text = "Correct Answer";
                buttonImage = answersButtons[index].GetComponent<Image>();
                //buttonImage.sprite = correctAnswerSprite; 
@@ -37,19 +76,9 @@ public class Quiz : MonoBehaviour
                 buttonImage = answersButtons[index].GetComponent<Image>();
                 questionText.text = ("Correct Answer is : " + questions.GetAnswer(correctAnswerIndex));
                 buttonImage.color = (new Vector4(255,0,0,255));
-
             }
-            SetButtonState(false);
-        }
-
-    
-    void DisplayNextQuestion()
-    {
-        SetButtonState(true);
-        SetDefaultButtonColorSpirites();
-        DisplayQuestion();
+         
     }
-
     void SetDefaultButtonColorSpirites()
     {
        for(int i = 0; i<answersButtons.Length; i++)
@@ -60,8 +89,8 @@ public class Quiz : MonoBehaviour
     }
    void DisplayQuestion()
    {
-       questionText.text = questions.GetQuestion();
         
+        questionText.text = questions.GetQuestion();
         
         for (int i = 0; i<answersButtons.Length; i++)
         {
@@ -69,13 +98,14 @@ public class Quiz : MonoBehaviour
             TextMeshProUGUI buttonText = answersButtons[i].GetComponentInChildren<TextMeshProUGUI>();
             buttonText.text = questions.GetAnswer(i);
       
-            
         }
-
+        timer.nextQuestion= false;
+        
    }
 
    void SetButtonState (bool state)
-   { 
+   {  
+       
       for(int i = 0; i<answersButtons.Length; i++)
       {
         Button button = answersButtons[i].GetComponent<Button>();
